@@ -1,6 +1,26 @@
 #include "unp.h"
 #include "codes.h"
 
+
+int handle_client_write(sockfd){
+  char fd_buffer[4];
+  char data_len_buffer[4];
+
+  int fd;
+  int data_len;
+
+  read(sockfd, &fd_buffer, 4);
+  read(sockfd, &data_len_buffer, 4);
+
+  memcpy(&fd, fd_buffer, sizeof(int));
+  memcpy(&data_len, data_len_buffer, sizeof(int));
+  //fd = *fd_buffer;
+  //data_len = *data_len_buffer;
+
+  printf("File write, fd: %d, len: %d\n", fd, data_len);
+  fflush(stdout);
+}
+
 int handle_client_open_file(sockfd){
   char len;
 
@@ -28,6 +48,9 @@ int handle_client(int sockfd){
         break;
       case OPEN_FILE:
         handle_client_open_file(sockfd);
+        break;
+      case WRITE:
+        handle_client_write(sockfd);
         break;
     }
   }  
