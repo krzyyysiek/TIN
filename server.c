@@ -5,16 +5,30 @@ int handle_write(int sockfd){
   char fd_buffer[4];
   char data_len_buffer[4];
 
-  int fd;
+  FILE* fd;
   int data_len;
 
   char data_buffer[1024];
+  int remaining;
+
+  int n;
+  int to_read;
 
   read(sockfd, &fd_buffer, 4);
   read(sockfd, &data_len_buffer, 4);
 
   memcpy(&fd, fd_buffer, sizeof(int));
   memcpy(&data_len, data_len_buffer, sizeof(int));
+
+  remaining= data_len;
+  to_read = min(1024, remaining);
+  while( remaining > 0 && (n = read(sockfd, &data_buffer, to_read)) != 0){
+    printf("Writing %d bytes to file", n);
+    fwrite(&data_buffer, 1, n, fd);
+ //   fwrite(fd, &data_buffer, n); 
+    remaining -= n;
+    to_read = min(1024, remaining);
+  }
 
   printf("File write, fd: %d, len: %d\n", fd, data_len);
   fflush(stdout);
@@ -53,9 +67,6 @@ int handle_client(int sockfd){
     printf("Received frame with code: %d\n", (int)code);
     fflush(stdout); 
     switch(code){
-      case TEST:
-	handle_test();
-        break;
       case OPEN_FILE:
         handle_open_file(sockfd);
         break;
