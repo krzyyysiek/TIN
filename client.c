@@ -1,7 +1,40 @@
 #include "unp.h"
 #include "codes.h"
 
-int test_write_out(int sockfd, int fd){
+int fs_openserver(char * ip ) {
+  int 			sockfd;
+  struct sockaddr_in	servaddr;
+  
+  sockfd = Socket(AF_INET, SOCK_STREAM, 0);
+  
+  bzero(&servaddr, sizeof(servaddr));
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_port = htons(SERV_PORT);
+  Inet_pton(AF_INET, ip, &servaddr.sin_addr);
+  Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
+  return sockfd;
+}
+
+int fs_open(int srvhndl, char * path) {
+  char buffer[5];
+  int fd;
+  int path_len = strlen(path);
+  char msg[2];
+  msg[0] = (char)OPEN_FILE;
+  msg[1] = (char)path_len; //sciezka niedluzsza niz 255 znakow
+
+  write(srvhndl, &msg, 2);
+  read(srvhndl, buffer, 5);
+  // TODO check czy bajt 0. to OK_OPEN
+  memcpy(&fd, &buffer[1], sizeof(int));
+
+  printf("Received fd: %d\n", fd);
+  fflush(stdout);
+  return fd;
+}
+
+int fs_write(int srvhndl, int fd, char* data, int len) {
+  // TODO wysylanie arbitralnych danych
   char write_msg[13];
   int data_len = 4;
   write_msg[0] = (char)WRITE;
@@ -12,54 +45,20 @@ int test_write_out(int sockfd, int fd){
   write_msg[10] = 'O';
   write_msg[11] = 'L';
   write_msg[12] = 'O';
-  write(sockfd, &write_msg, 13);
+  write(srvhndl, &write_msg, 13);
 }
 
-int test_open_out(int sockfd){
-  char buffer[5];
-  int fd = 11111;
-  int data_len = 22222;
-  char test_msg[2];
-  test_msg[0] = (char)OPEN_FILE;
-  test_msg[1] = (char)15;
-
-  write(sockfd, &test_msg, 2);
-}
-
-int test_open_in(int sockfd){
-  int fd;
-  char buffer[5];
-  read(sockfd, buffer, 5);
-
-  memcpy(&fd, &buffer[1], sizeof(int));
-
-  printf("Received fd: %d\n", fd);
-  fflush(stdout);
-  return fd;
-}
 
 int main( int argc, char **argv){
-  int 			sockfd;
-  struct sockaddr_in	servaddr;
+  int srvhndl;
   int fd;
   
   if (argc != 2) 
     err_quit("usage: tcpli <IPaddress>");
 
-  sockfd = Socket(AF_INET, SOCK_STREAM, 0);
-  
-  bzero(&servaddr, sizeof(servaddr));
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_port = htons(SERV_PORT);
-  Inet_pton(AF_INET, argv[1], &servaddr.sin_addr);
-
-  Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
-
-  test_open_out(sockfd);  
-  fd = test_open_in(sockfd);
-
-  test_write_out(sockfd, fd);
-  test_write_out(sockfd, fd);
+  srvhndl = fs_openserver(argv[1]);
+  fd = fs_open(srvhndl, "wat.txt");
+  fs_write(srvhndl, fd, NULL, 0);
 
   exit(0);
 }
