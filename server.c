@@ -1,42 +1,52 @@
 #include "unp.h"
 #include "codes.h"
 
-
-int handle_client_write(sockfd){
+int handle_write(int sockfd){
   char fd_buffer[4];
   char data_len_buffer[4];
 
   int fd;
   int data_len;
 
+  char data_buffer[1024];
+
   read(sockfd, &fd_buffer, 4);
   read(sockfd, &data_len_buffer, 4);
 
   memcpy(&fd, fd_buffer, sizeof(int));
   memcpy(&data_len, data_len_buffer, sizeof(int));
-  //fd = *fd_buffer;
-  //data_len = *data_len_buffer;
 
   printf("File write, fd: %d, len: %d\n", fd, data_len);
   fflush(stdout);
 }
 
-int handle_client_open_file(sockfd){
+int handle_open_file(sockfd){
+  FILE* fd = NULL;
+  char msg_buffer[5];
   char len;
+
+  msg_buffer[0] = (char)OPEN_FILE_OK;
 
   read(sockfd, &len, 1);
   printf("File path len: %d\n", (int)len);
-  fflush(stdout);
-}
 
-int handle_client_test(){
+  fd = fopen("./test.txt", "w+");
+  if(fd == NULL){
+    printf("Problem?");
+  }
+  memcpy(&msg_buffer[1], &fd, sizeof(int));
+
+  write(sockfd, &msg_buffer, 5); 
+  fflush(stdout);
+}	
+
+int handle_test(){
   printf("test");
   fflush(stdout);
 }
 
 int handle_client(int sockfd){
   ssize_t	n;
-
   char		code;
 
   while( (n = read(sockfd, &code, 1)) != 0){
@@ -44,13 +54,13 @@ int handle_client(int sockfd){
     fflush(stdout); 
     switch(code){
       case TEST:
-	handle_client_test();
+	handle_test();
         break;
       case OPEN_FILE:
-        handle_client_open_file(sockfd);
+        handle_open_file(sockfd);
         break;
       case WRITE:
-        handle_client_write(sockfd);
+        handle_write(sockfd);
         break;
     }
   }  

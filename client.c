@@ -1,7 +1,11 @@
 #include "unp.h"
 #include "codes.h"
 
-int write_test(int sockfd){
+int test_write_out(int sockfd, int filefd){
+
+}
+
+int test_open_out(int sockfd){
   int fd = 11111;
   int data_len = 22222;
   char test_msg[2];
@@ -20,9 +24,22 @@ int write_test(int sockfd){
   write(sockfd, &write_msg, 9);
 }
 
+int test_open_in(int sockfd){
+  int fd;
+  char buffer[5];
+  read(sockfd, buffer, 5);
+
+  memcpy(&fd, &buffer[1], sizeof(int));
+
+  printf("Received fd: %d\n", fd);
+  fflush(stdout);
+  return fd;
+}
+
 int main( int argc, char **argv){
   int 			sockfd;
   struct sockaddr_in	servaddr;
+  int fd;
   
   if (argc != 2) 
     err_quit("usage: tcpli <IPaddress>");
@@ -36,7 +53,10 @@ int main( int argc, char **argv){
 
   Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
 
-  write_test(sockfd);  
+  test_open_out(sockfd);  
+  fd = test_open_in(sockfd);
+
+  test_write_out(sockfd, fd);
 
   exit(0);
 }
