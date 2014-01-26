@@ -1,7 +1,7 @@
 #include "unp.h"
 #include "codes.h"
 
-int fs_openserver(char * ip ) {
+int fs_openserver(char * ip, char protocol[4], int port ) {
   int 			sockfd;
   struct sockaddr_in	servaddr;
   
@@ -9,7 +9,7 @@ int fs_openserver(char * ip ) {
   
   bzero(&servaddr, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
-  servaddr.sin_port = htons(SERV_PORT);
+  servaddr.sin_port = htons(port);
   Inet_pton(AF_INET, ip, &servaddr.sin_addr);
   Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
   return sockfd;
@@ -70,13 +70,29 @@ int main( int argc, char **argv){
   int srvhndl;
   int fd;
 
+  int port=80;
+  char protocol[4]="TCP";
+
+  if(argc<4){
+	  printf("Usage:\n./server <address> <protocol> <port>\nwhere:\n<protocol> - TCP or UDP\n<port>     - port number\n");
+	  return 0;
+  }else{
+  	  memcpy(&protocol, argv[2], 4);
+  	  port=strtol(argv[3], NULL, 10);
+  	  if(strcmp(protocol,"TCP")!=0 && strcmp(protocol,"UDP")!=0){
+  		  printf("Wrong protocol specified.\n");
+  		  return 0;
+  	  }
+  	  printf("Running with %s connection on port %d...\n",protocol,port);
+  }
+
   char test[9] = "Testydwaa";
   printf("%s", test);
   
-  if (argc != 2) 
-    err_quit("usage: tcpli <IPaddress>");
+//  if (argc != 2)
+//    err_quit("usage: tcpli <IPaddress>");
 
-  srvhndl = fs_openserver(argv[1]);
+  srvhndl = fs_openserver(argv[1],protocol,port);
   fd = fs_open(srvhndl, "wat.txt");
   fs_write(srvhndl, fd, test, 8);
 
