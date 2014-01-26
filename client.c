@@ -25,7 +25,10 @@ int fs_open(int srvhndl, char * path) {
 
   write(srvhndl, &msg, 2);
   read(srvhndl, buffer, 5);
-  // TODO check czy bajt 0. to OK_OPEN
+  if (buffer[0] != (char)OPEN_FILE_OK) {
+    printf("Couldn't open file on server.");
+    return 0; // jakis kod bledu zamiast 0
+  } 
   memcpy(&fd, &buffer[1], sizeof(int));
 
   printf("Received fd: %d\n", fd);
@@ -40,24 +43,12 @@ int sock_write_int(int sockfd, int *in_val){
 }
 
 int fs_write(int srvhndl, int fd, char* data, int len) {
-  // TODO wysylanie arbitralnych danych
-  char write_msg[13];
-  int data_len = 4;
-  write_msg[0] = (char)WRITE;
-  memcpy(&write_msg[1], &fd, sizeof(int));
-  memcpy(&write_msg[5], &data_len, sizeof(int));
-  if(data==NULL){
-  write_msg[9] = 'L';
-  write_msg[10] = 'O';
-  write_msg[11] = 'L';
-  write_msg[12] = 'O';
-  }else{
-	  write_msg[9] = 'Y';
-	  write_msg[10] = 'O';
-	  write_msg[11] = 'L';
-	  write_msg[12] = 'O';
-  }
-  write(srvhndl, &write_msg, 13);
+  char code = (char)WRITE;
+  char write_msg[9];
+  write(srvhndl,&code, 1);
+  sock_write_int(srvhndl, &fd);
+  sock_write_int(srvhndl, &len); 
+  write(srvhndl, data, len);
 }
 
 
@@ -78,16 +69,16 @@ int fs_read(int srvhndl, int fd, char *buffer, int len){
 int main( int argc, char **argv){
   int srvhndl;
   int fd;
-  char buffer[128];
+
+  char test[9] = "Testydwaa";
+  printf("%s", test);
   
   if (argc != 2) 
     err_quit("usage: tcpli <IPaddress>");
 
   srvhndl = fs_openserver(argv[1]);
   fd = fs_open(srvhndl, "wat.txt");
-  fs_write(srvhndl, fd, "s", 0);
-  fs_close(srvhndl, fd);
-  fs_write(srvhndl, fd, NULL, 0);
+  fs_write(srvhndl, fd, test, 8);
 
   exit(0);
 }

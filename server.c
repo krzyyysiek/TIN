@@ -44,16 +44,21 @@ int handle_open_file(sockfd){
   FILE* fd = NULL;
   char msg_buffer[5];
   char len;
-
-  msg_buffer[0] = (char)OPEN_FILE_OK;
+  //char path[255];
 
   read(sockfd, &len, 1);
   printf("File path len: %d\n", (int)len);
-
+  // read(sockfd, path, len); 
+  // TODO tlumaczenie podanej sciezki na sciezki w serwerze
+  // fd = fopen(path, "w+");
   fd = fopen("./test.txt", "w+");
   if(fd == NULL){
     printf("Problem?");
+    // msg_buffer[0] = JAKIS_KOD_BLEDU;
   }
+  
+  msg_buffer[0] = (char)OPEN_FILE_OK;
+  
   memcpy(&msg_buffer[1], &fd, sizeof(int));
 
   write(sockfd, &msg_buffer, 5); 
