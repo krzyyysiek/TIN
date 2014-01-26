@@ -1,6 +1,12 @@
 #include "unp.h"
 #include "codes.h"
 
+int sock_read_int(int sockfd, int *value_out){
+  char buffer[4];
+  read(sockfd, &buffer, 4);
+  memcpy(value_out, &buffer, 4);
+}
+
 int handle_write(int sockfd){
   char fd_buffer[4];
   char data_len_buffer[4];
@@ -54,9 +60,25 @@ int handle_open_file(sockfd){
   fflush(stdout);
 }	
 
-int handle_test(){
-  printf("test");
+int handle_read_in(int sockfd, int *fd, int *len){
+  sock_read_int(sockfd, fd);
+  sock_read_int(sockfd, len);
+
+  printf("File read, fd: %d, len: %d\n", *fd, *len);
   fflush(stdout);
+}
+
+int handle_read_out(int sockfd, int *fd, int *data_len){
+  // TODO
+  printf("Dummy reading file");
+  fflush(stdout);
+}
+
+int handle_read(sockfd){
+  int fd;
+  int data_len;
+  handle_read_in(sockfd, &fd, &data_len);
+  handle_read_out(sockfd, &fd, &data_len);
 }
 
 int handle_client(int sockfd){
@@ -73,6 +95,8 @@ int handle_client(int sockfd){
       case WRITE:
         handle_write(sockfd);
         break;
+      case READ:
+        handle_read(sockfd);
     }
   }  
 }

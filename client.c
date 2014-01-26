@@ -33,6 +33,12 @@ int fs_open(int srvhndl, char * path) {
   return fd;
 }
 
+int sock_write_int(int sockfd, int *in_val){
+  char buffer[4];
+  memcpy(&buffer[0], in_val, 4); 
+  write(sockfd, &buffer[0], 4);
+}
+
 int fs_write(int srvhndl, int fd, char* data, int len) {
   // TODO wysylanie arbitralnych danych
   char write_msg[13];
@@ -48,17 +54,25 @@ int fs_write(int srvhndl, int fd, char* data, int len) {
   write(srvhndl, &write_msg, 13);
 }
 
+int fs_read(int srvhndl, int fd, char *buffer, int len){
+  char code = (char) READ;
+  write(srvhndl, &code, 1);
+  sock_write_int(srvhndl, &fd);
+  sock_write_int(srvhndl, &len);
+}
 
 int main( int argc, char **argv){
   int srvhndl;
   int fd;
+  char buffer[128];
   
   if (argc != 2) 
     err_quit("usage: tcpli <IPaddress>");
 
   srvhndl = fs_openserver(argv[1]);
   fd = fs_open(srvhndl, "wat.txt");
-  fs_write(srvhndl, fd, NULL, 0);
+//  fs_write(srvhndl, fd, NULL, 0);
+  fs_read(srvhndl, fd, buffer, 4);
 
   exit(0);
 }
