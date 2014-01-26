@@ -60,6 +60,18 @@ int handle_open_file(sockfd){
   fflush(stdout);
 }	
 
+int handle_close(int sockfd){
+  char fd_buffer[4];
+  FILE* fd = NULL;
+  read(sockfd, &fd_buffer, 4);
+  memcpy(&fd, fd_buffer, sizeof(int));
+
+  if(fclose(fd) == EOF){
+    printf("Problem?");
+  }
+  printf("File closed\n");
+}
+
 int handle_read_in(int sockfd, int *fd, int *len){
   sock_read_int(sockfd, fd);
   sock_read_int(sockfd, len);
@@ -87,16 +99,19 @@ int handle_client(int sockfd){
 
   while( (n = read(sockfd, &code, 1)) != 0){
     printf("Received frame with code: %d\n", (int)code);
-    fflush(stdout); 
+    fflush(stdout);
     switch(code){
       case OPEN_FILE:
         handle_open_file(sockfd);
         break;
       case WRITE:
+    	printf ("a");
+    	fflush(stdout);
         handle_write(sockfd);
         break;
-      case READ:
-        handle_read(sockfd);
+      case CLOSE_FILE:
+        handle_close(sockfd);
+        break;
     }
   }  
 }

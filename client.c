@@ -46,13 +46,27 @@ int fs_write(int srvhndl, int fd, char* data, int len) {
   write_msg[0] = (char)WRITE;
   memcpy(&write_msg[1], &fd, sizeof(int));
   memcpy(&write_msg[5], &data_len, sizeof(int));
-
+  if(data==NULL){
   write_msg[9] = 'L';
   write_msg[10] = 'O';
   write_msg[11] = 'L';
   write_msg[12] = 'O';
+  }else{
+	  write_msg[9] = 'Y';
+	  write_msg[10] = 'O';
+	  write_msg[11] = 'L';
+	  write_msg[12] = 'O';
+  }
   write(srvhndl, &write_msg, 13);
 }
+
+
+int fs_close(int srvhndl, int fd) {
+  char write_msg[5];
+  write_msg[0] = (char)CLOSE_FILE;
+  memcpy(&write_msg[1], &fd, sizeof(int));
+  write(srvhndl, &write_msg, 5);
+} 
 
 int fs_read(int srvhndl, int fd, char *buffer, int len){
   char code = (char) READ;
@@ -71,8 +85,9 @@ int main( int argc, char **argv){
 
   srvhndl = fs_openserver(argv[1]);
   fd = fs_open(srvhndl, "wat.txt");
-//  fs_write(srvhndl, fd, NULL, 0);
-  fs_read(srvhndl, fd, buffer, 4);
+  fs_write(srvhndl, fd, "s", 0);
+  fs_close(srvhndl, fd);
+  fs_write(srvhndl, fd, NULL, 0);
 
   exit(0);
 }

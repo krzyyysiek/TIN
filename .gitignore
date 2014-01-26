@@ -1,3 +1,9 @@
+.project
+client
+server
+*.txt
+config.h
+
 # Object files
 *.o
 *.ko
