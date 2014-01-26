@@ -50,7 +50,7 @@ int handle_open_file(sockfd){
   read(sockfd, &len, 1);
   printf("File path len: %d\n", (int)len); fflush(stdout); 
   read(sockfd, &path, (int)len);
-  path[len]='\0'; 
+  path[(int)len]='\0'; 
   // TODO ewentualne tlumaczenie podanej sciezki na sciezke w serwerze 
   fd = fopen(path, "w+");
   if(fd == NULL){
@@ -59,7 +59,8 @@ int handle_open_file(sockfd){
   }
  
   code = (char)OPEN_FILE_OK;
-  
+  write(sockfd, &code, 1);  
+
   memcpy(&fd_msg[0], &fd, sizeof(int));
   write(sockfd, &fd_msg, 4); 
   fflush(stdout);
