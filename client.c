@@ -10,6 +10,7 @@ int fs_openserver(char * ip, char protocol[4], int port ) {
   bzero(&servaddr, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
   servaddr.sin_port = htons(port);
+
   Inet_pton(AF_INET, ip, &servaddr.sin_addr);
   Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
   return sockfd;
@@ -66,17 +67,63 @@ int fs_close(int srvhndl, int fd) {
   write(srvhndl, &write_msg, 5);
 } 
 
-int fs_read(int srvhndl, int fd, char *buffer, int len){
+int fs_read_out(int sockfd, int fd, int len){
   char code = (char) READ;
-  write(srvhndl, &code, 1);
-  sock_write_int(srvhndl, &fd);
-  sock_write_int(srvhndl, &len);
+  write(sockfd, &code, 1);
+  sock_write_int(sockfd, &fd);
+  sock_write_int(sockfd, &len);
+}
+ 
+int fs_read_in(int sockfd, char *ptr, int len){
+  char code;
+  char buffer[1024];
+  int remaining, to_read, n, offset;
+
+  read(sockfd, &code, 1);  
+  if(code != READ_OK){
+    printf("Problem with reading");
+    fflush(stdout);
+    return -1;
+  }
+  printf("Received READ_OK\n");
+  fflush(stdout);
+
+  offset = 0;
+  remaining = len;
+  to_read = min(1024, remaining);
+
+  while(remaining > 0 && (n = read(sockfd, &buffer, to_read)) != 0){
+    printf("Read %d bytes and writing it.\n", n);
+    fflush(stdout);
+
+    memcpy(&ptr[offset], buffer, n);
+    remaining -= n;
+    offset += n;
+  }
+}
+
+int fs_read(int srvhndl, int fd, char *ptr, int len){
+  fs_read_out(srvhndl, fd, len);
+  fs_read_in(srvhndl, ptr, len);
+}
+
+int test_read() {
+  int srvhndl, fd, i;
+  char buffer[1024];
+
+  srvhndl = fs_openserver("127.0.0.1", "TCP", 9001);
+  fd = fs_open(srvhndl, "test.txt");
+
+  fs_read(srvhndl, fd, buffer,5); 
+
+  for(i=0; i<5; i++){
+    printf("%c", buffer[i]);
+  }
+  printf("\n");
+  fflush(stdout);
 }
 
 int main( int argc, char **argv){
-  int srvhndl;
-  int fd;
-
   int port=80;
   char protocol[4]="TCP";
 
@@ -93,15 +140,6 @@ int main( int argc, char **argv){
   	  printf("Running with %s connection on port %d...\n",protocol,port);
   }
 
-  char test[9] = "Testydwaa";
-  printf("%s", test);
-  
-//  if (argc != 2)
-//    err_quit("usage: tcpli <IPaddress>");
-
-  srvhndl = fs_openserver(argv[1],protocol,port);
-  fd = fs_open(srvhndl, "wat.txt");
-  fs_write(srvhndl, fd, test, 8);
-
+  test_read();
   exit(0);
 }

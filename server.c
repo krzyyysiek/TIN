@@ -86,9 +86,27 @@ int handle_read_in(int sockfd, int *fd, int *len){
   fflush(stdout);
 }
 
-int handle_read_out(int sockfd, int *fd, int *data_len){
-  // TODO
-  printf("Dummy reading file");
+int handle_read_out(int sockfd, int *ptr_fd, int *ptr_len){
+  char code = (char)READ_OK;
+  char buffer[1024];
+  int remaining, len, n, to_read;
+  FILE* fd;
+
+  fd = *ptr_fd;
+  len = *ptr_len;
+  
+  write(sockfd, &code, 1);
+  //printf("wat"); fflush(stdout);
+
+  remaining = len;
+  to_read = min(1024, remaining);
+  while( remaining > 0 && (n = fread(buffer, 1, to_read, fd)) != 0){
+    printf("Read %d bytes and writing to socket", n);
+    fflush(stdout);
+    write(sockfd, buffer, n);
+    remaining -= n;
+    to_read = min(1024, remaining);
+  }
   fflush(stdout);
 }
 
@@ -117,6 +135,9 @@ int handle_client(int sockfd){
         break;
       case CLOSE_FILE:
         handle_close(sockfd);
+        break;
+      case READ:
+        handle_read(sockfd);
         break;
     }
   }  
