@@ -15,6 +15,10 @@ int fs_openserver(char * ip, char protocol[4], int port ) {
   return sockfd;
 }
 
+int fs_closeserver(int srvhndl) {
+  close(srvhndl);
+}
+
 int fs_open(int srvhndl, char * path) {
   char buffer[5];
   int fd;
@@ -24,9 +28,12 @@ int fs_open(int srvhndl, char * path) {
   msg[1] = (char)path_len; //sciezka niedluzsza niz 255 znakow
 
   write(srvhndl, &msg, 2);
+  write(srvhndl, path, path_len);
+
   read(srvhndl, buffer, 5);
   if (buffer[0] != (char)OPEN_FILE_OK) {
     printf("Couldn't open file on server.");
+    fflush(stdout);
     return 0; // jakis kod bledu zamiast 0
   } 
   memcpy(&fd, &buffer[1], sizeof(int));

@@ -42,26 +42,26 @@ int handle_write(int sockfd){
 
 int handle_open_file(sockfd){
   FILE* fd = NULL;
-  char msg_buffer[5];
+  char code;
   char len;
-  //char path[255];
+  char fd_msg[4];
+  char path[255];
 
   read(sockfd, &len, 1);
-  printf("File path len: %d\n", (int)len);
-  // read(sockfd, path, len); 
-  // TODO tlumaczenie podanej sciezki na sciezki w serwerze
-  // fd = fopen(path, "w+");
-  fd = fopen("./test.txt", "w+");
+  printf("File path len: %d\n", (int)len); fflush(stdout); 
+  read(sockfd, &path, (int)len);
+  path[len]='\0'; 
+  // TODO ewentualne tlumaczenie podanej sciezki na sciezke w serwerze 
+  fd = fopen(path, "w+");
   if(fd == NULL){
-    printf("Problem?");
-    // msg_buffer[0] = JAKIS_KOD_BLEDU;
+    printf("Problem opening file");
+    code = (char)CANT_OPEN_FILE;
   }
+ 
+  code = (char)OPEN_FILE_OK;
   
-  msg_buffer[0] = (char)OPEN_FILE_OK;
-  
-  memcpy(&msg_buffer[1], &fd, sizeof(int));
-
-  write(sockfd, &msg_buffer, 5); 
+  memcpy(&fd_msg[0], &fd, sizeof(int));
+  write(sockfd, &fd_msg, 4); 
   fflush(stdout);
 }	
 

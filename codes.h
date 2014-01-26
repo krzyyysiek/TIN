@@ -3,3 +3,4 @@
 #define READ 3 
 #define OPEN_FILE_OK 4
 #define CLOSE_FILE 5
+#define CANT_OPEN_FILE 20
