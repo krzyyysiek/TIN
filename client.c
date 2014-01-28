@@ -102,6 +102,28 @@ int fs_read_in(int sockfd, char *ptr, int len){
   }
 }
 
+off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
+  int off_t_size = sizeof(off_t);
+  char buffer[9+off_t_size];
+  char code = (char) LSEEK;
+  off_t lseek_offset;
+  memcpy(&buffer[0], &code, 1);
+  memcpy(&buffer[1], &fd, 4);
+  memcpy(&buffer[5], &offset, off_t_size);
+  memcpy(&buffer[5+off_t_size], &whence, 4);
+  write(srvhndl, &code, 1);
+  sock_write_int(srvhndl, &fd);
+  write(srvhndl, &offset, off_t_size);
+
+  read(srvhndl, &code, 1);
+  if(code != LSEEK_OFFSET){
+	  return -1;
+  }else{
+	  read(srvhndl, &lseek_offset, off_t_size);
+	  return lseek_offset;
+  }
+}
+
 int fs_read(int srvhndl, int fd, char *ptr, int len){
   fs_read_out(srvhndl, fd, len);
   fs_read_in(srvhndl, ptr, len);

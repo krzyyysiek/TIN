@@ -5,3 +5,5 @@
 #define CLOSE_FILE 5
 #define CANT_OPEN_FILE 20
 #define READ_OK 10
+#define LSEEK 6
+#define LSEEK_OFFSET 7

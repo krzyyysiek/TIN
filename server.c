@@ -117,6 +117,21 @@ int handle_read(sockfd){
   handle_read_out(sockfd, &fd, &data_len);
 }
 
+int handle_lseek(sockfd){
+  char code;
+  off_t offset,lseek_ofsset;
+  int whence,fd;
+
+  read(sockfd, &fd, sizeof(int));
+  read(sockfd, &offset, sizeof(off_t));
+  read(sockfd, &whence, sizeof(int));
+  lseek_ofsset=lseek(fd, offset, whence);
+
+  code=LSEEK_OFFSET;
+  write(sockfd, &code, 1);
+  write(sockfd, &lseek_ofsset, sizeof(off_t));
+}
+
 int handle_client(int sockfd){
   ssize_t	n;
   char		code;
@@ -132,6 +147,9 @@ int handle_client(int sockfd){
     	printf ("a");
     	fflush(stdout);
         handle_write(sockfd);
+        break;
+      case LSEEK:
+        handle_lseek(sockfd);
         break;
       case CLOSE_FILE:
         handle_close(sockfd);
