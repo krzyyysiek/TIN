@@ -144,24 +144,3 @@ int test_read() {
   printf("\n");
   fflush(stdout);
 }
-
-int main( int argc, char **argv){
-  int port=80;
-  char protocol[4]="TCP";
-
-  if(argc<4){
-	  printf("Usage:\n./server <address> <protocol> <port>\nwhere:\n<protocol> - TCP or UDP\n<port>     - port number\n");
-	  return 0;
-  }else{
-  	  memcpy(&protocol, argv[2], 4);
-  	  port=strtol(argv[3], NULL, 10);
-  	  if(strcmp(protocol,"TCP")!=0 && strcmp(protocol,"UDP")!=0){
-  		  printf("Wrong protocol specified.\n");
-  		  return 0;
-  	  }
-  	  printf("Running with %s connection on port %d...\n",protocol,port);
-  }
-
-  test_read();
-  exit(0);
-}
