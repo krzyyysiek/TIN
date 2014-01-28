@@ -1,7 +1,11 @@
 #include "unp.h"
 #include "codes.h"
 
-#define cDEBUG printf("wat_client\n"); fflush(stdout);
+int sock_write_int(int sockfd, int *in_val){
+  char buffer[4];
+  memcpy(&buffer[0], in_val, 4); 
+  write(sockfd, &buffer[0], 4);
+}
 
 int fs_openserver(char * ip, char protocol[4], int port, int *srvhndl_out ) {
   int 			sockfd;
@@ -23,7 +27,7 @@ int fs_closeserver(int srvhndl) {
   close(srvhndl);
 }
 
-int fs_open(int srvhndl, char * path, int *fd_out) {
+int fs_open(int srvhndl, char * path, int flags, int *fd_out) {
   char buffer[5];
   int fd;
   int path_len = strlen(path);
@@ -32,6 +36,7 @@ int fs_open(int srvhndl, char * path, int *fd_out) {
   msg[1] = (char)path_len; //sciezka niedluzsza niz 255 znakow
 
   write(srvhndl, &msg, 2);
+  sock_write_int(srvhndl, &flags);
   write(srvhndl, path, path_len);
 
   read(srvhndl, buffer, 5);
@@ -48,11 +53,6 @@ int fs_open(int srvhndl, char * path, int *fd_out) {
   return 0;
 }
 
-int sock_write_int(int sockfd, int *in_val){
-  char buffer[4];
-  memcpy(&buffer[0], in_val, 4); 
-  write(sockfd, &buffer[0], 4);
-}
 
 int fs_write(int srvhndl, int fd, char* data, int len) {
   char code = (char)WRITE;
@@ -95,7 +95,6 @@ int fs_read_in(int sockfd, char *ptr, int len){
   offset = 0;
   remaining = len;
   to_read = min(1024, remaining);
-  cDEBUG
   while(remaining > 0 && (n = read(sockfd, &buffer, to_read)) != 0){
     printf("Read %d bytes and writing it.\n", n);
     fflush(stdout);
@@ -104,7 +103,6 @@ int fs_read_in(int sockfd, char *ptr, int len){
     remaining -= n;
     offset += n;
   }
-  cDEBUG
 }
 
 off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
@@ -122,16 +120,14 @@ off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
 
   read(srvhndl, &code, 1);
   if(code != LSEEK_OFFSET){
-	  return -1;
+    return -1;
   }else{
-	  read(srvhndl, &lseek_offset, off_t_size);
-	  return lseek_offset;
+    read(srvhndl, &lseek_offset, off_t_size);
+    return lseek_offset;
   }
 }
 
 int fs_read(int srvhndl, int fd, char *ptr, int len){
-  cDEBUG
   fs_read_out(srvhndl, fd, len);
-  cDEBUG
   fs_read_in(srvhndl, ptr, len);
 }

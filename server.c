@@ -1,8 +1,6 @@
 #include "unp.h"
 #include "codes.h"
 
-#define sDEBUG printf("wat_server\n");fflush(stdout);
-
 int sock_read_int(int sockfd, int *value_out){
   char buffer[4];
   read(sockfd, &buffer, 4);
@@ -13,7 +11,7 @@ int handle_write(int sockfd){
   char fd_buffer[4];
   char data_len_buffer[4];
 
-  FILE* fd;
+  int fd;
   int data_len;
 
   char data_buffer[1024];
@@ -24,19 +22,16 @@ int handle_write(int sockfd){
 
   read(sockfd, &fd_buffer, 4);
   read(sockfd, &data_len_buffer, 4);
-  sDEBUG
 
   memcpy(&fd, fd_buffer, sizeof(int));
   memcpy(&data_len, data_len_buffer, sizeof(int));
-  sDEBUG
 
   remaining= data_len;
   to_read = min(1024, remaining);
-  sDEBUG
   while( remaining > 0 && (n = read(sockfd, &data_buffer, to_read)) != 0){
     printf("Writing %d bytes to file", n);
-    fwrite(&data_buffer, 1, n, fd);
- //   fwrite(fd, &data_buffer, n); 
+    write(fd, &data_buffer, n);
+    //fwrite(&data_buffer, 1, n, fd);
     remaining -= n;
     to_read = min(1024, remaining);
   }
@@ -46,20 +41,20 @@ int handle_write(int sockfd){
 }
 
 int handle_open_file(sockfd){
-  FILE* fd = NULL;
-  char code;
-  char len;
-  char fd_msg[4];
-  char path[255];
+  int fd = NULL;
+  char code, len, fd_msg[4], path[255];
+  int flags;
 
   read(sockfd, &len, 1);
-  printf("File path len: %d\n", (int)len); fflush(stdout); 
+  printf("File path len: %d, flags:%d\n", (int)len, flags); fflush(stdout); 
+  sock_read_int(sockfd, &flags);
+
   read(sockfd, &path, (int)len);
   path[(int)len]='\0'; 
-  // TODO ewentualne tlumaczenie podanej sciezki na sciezke w serwerze 
-  fd = fopen(path, "r+");
-  if(fd == NULL){
+  fd = open(path, flags);
+  if(fd < 0){
     printf("Problem opening file");
+    fflush(stdout);
     code = (char)CANT_OPEN_FILE;
   }
  
@@ -81,6 +76,7 @@ int handle_close(int sockfd){
     printf("Problem?");
   }
   printf("File closed\n");
+  fflush(stdout);
 }
 
 int handle_read_in(int sockfd, int *fd, int *len){
@@ -94,24 +90,16 @@ int handle_read_in(int sockfd, int *fd, int *len){
 int handle_read_out(int sockfd, int *ptr_fd, int *ptr_len){
   char code = (char)READ_OK;
   char buffer[1024];
-  int remaining, len, n, to_read;
-  FILE* fd;
-
-  sDEBUG
+  int fd, remaining, len, n, to_read;
 
   fd = *ptr_fd;
   len = *ptr_len;
-
-  printf("fd 2 : %d", fd); fflush(stdout);
   
   write(sockfd, &code, 1);
-  //printf("wat"); fflush(stdout);
 
   remaining = len;
   to_read = min(1024, remaining);
-  sDEBUG
-  while( remaining > 0 && (n = fread(buffer, 1, to_read, fd)) != 0){
-    sDEBUG
+  while( remaining > 0 && (n = read(fd, buffer, to_read)) != 0){
     printf("Read %d bytes and writing to socket", n);
     fflush(stdout);
     write(sockfd, buffer, n);
@@ -119,8 +107,6 @@ int handle_read_out(int sockfd, int *ptr_fd, int *ptr_len){
     to_read = min(1024, remaining);
   }
   fflush(stdout);
-    printf("wasdao");
-    fflush(stdout);
 }
 
 int handle_read(sockfd){
@@ -157,8 +143,6 @@ int handle_client(int sockfd){
         handle_open_file(sockfd);
         break;
       case WRITE:
-    	printf ("a");
-    	fflush(stdout);
         handle_write(sockfd);
         break;
       case LSEEK:
