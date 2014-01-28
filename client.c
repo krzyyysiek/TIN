@@ -1,7 +1,9 @@
 #include "unp.h"
 #include "codes.h"
 
-int fs_openserver(char * ip, char protocol[4], int port ) {
+#define cDEBUG printf("wat_client\n"); fflush(stdout);
+
+int fs_openserver(char * ip, char protocol[4], int port, int *srvhndl_out ) {
   int 			sockfd;
   struct sockaddr_in	servaddr;
   
@@ -13,14 +15,15 @@ int fs_openserver(char * ip, char protocol[4], int port ) {
 
   Inet_pton(AF_INET, ip, &servaddr.sin_addr);
   Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
-  return sockfd;
+  *srvhndl_out = sockfd;
+  return 0;
 }
 
 int fs_closeserver(int srvhndl) {
   close(srvhndl);
 }
 
-int fs_open(int srvhndl, char * path) {
+int fs_open(int srvhndl, char * path, int *fd_out) {
   char buffer[5];
   int fd;
   int path_len = strlen(path);
@@ -41,7 +44,8 @@ int fs_open(int srvhndl, char * path) {
 
   printf("Received fd: %d\n", fd);
   fflush(stdout);
-  return fd;
+  *fd_out = fd;
+  return 0;
 }
 
 int sock_write_int(int sockfd, int *in_val){
@@ -91,7 +95,7 @@ int fs_read_in(int sockfd, char *ptr, int len){
   offset = 0;
   remaining = len;
   to_read = min(1024, remaining);
-
+  cDEBUG
   while(remaining > 0 && (n = read(sockfd, &buffer, to_read)) != 0){
     printf("Read %d bytes and writing it.\n", n);
     fflush(stdout);
@@ -100,6 +104,7 @@ int fs_read_in(int sockfd, char *ptr, int len){
     remaining -= n;
     offset += n;
   }
+  cDEBUG
 }
 
 off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
@@ -125,22 +130,8 @@ off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
 }
 
 int fs_read(int srvhndl, int fd, char *ptr, int len){
+  cDEBUG
   fs_read_out(srvhndl, fd, len);
+  cDEBUG
   fs_read_in(srvhndl, ptr, len);
-}
-
-int test_read() {
-  int srvhndl, fd, i;
-  char buffer[1024];
-
-  srvhndl = fs_openserver("127.0.0.1", "TCP", 9001);
-  fd = fs_open(srvhndl, "test.txt");
-
-  fs_read(srvhndl, fd, buffer,5); 
-
-  for(i=0; i<5; i++){
-    printf("%c", buffer[i]);
-  }
-  printf("\n");
-  fflush(stdout);
 }
