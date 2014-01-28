@@ -7,3 +7,5 @@
 #define READ_OK 10
 #define LSEEK 6
 #define LSEEK_OFFSET 7
+#define FSTAT 8
+#define FSTAT_STAT 9

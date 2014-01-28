@@ -120,15 +120,38 @@ int handle_lseek(sockfd){
   char code;
   off_t offset,lseek_ofsset;
   int whence,fd;
+  int off_t_size = sizeof(off_t_size);
+  char buffer[off_t_size];
 
   read(sockfd, &fd, sizeof(int));
-  read(sockfd, &offset, sizeof(off_t));
+  read(sockfd, &offset, off_t_size);
   read(sockfd, &whence, sizeof(int));
   lseek_ofsset=lseek(fd, offset, whence);
 
   code=LSEEK_OFFSET;
   write(sockfd, &code, 1);
-  write(sockfd, &lseek_ofsset, sizeof(off_t));
+  memcpy(buffer, lseek_ofsset, off_t_size);
+  write(sockfd, buffer, off_t_size);
+}
+
+int handle_fstat(sockfd){
+  int fd;
+  int stat_size = sizeof(stat_size);
+  int time_t_size = sizeof(time_t_size);
+  int off_t_size = sizeof(off_t_size);
+  char code = (char) FSTAT;
+  int fstat_return;
+  struct stat buf;
+
+  read(sockfd, &fd, 4);
+  fstat_return=fstat(fd, &buf);
+
+  code=LSEEK_OFFSET;
+  write(sockfd, &code, 1);
+  write(sockfd, &buf.st_size, off_t_size);
+  write(sockfd, &buf.st_atime, time_t_size);
+  write(sockfd, &buf.st_mtime, time_t_size);
+  write(sockfd, &buf.st_ctime, time_t_size);
 }
 
 int handle_client(int sockfd){
@@ -154,6 +177,9 @@ int handle_client(int sockfd){
       case READ:
         handle_read(sockfd);
         break;
+      case FSTAT:
+        handle_fstat(sockfd);
+        break;
     }
   }  
 }
@@ -164,9 +190,9 @@ int main(int argc, char **argv)
   pid_t 		childpid;
   socklen_t		clilen;
   struct sockaddr_in	cliaddr, servaddr;
-  int port=80;
-  char protocol[4]="TCP";
 
+  int port=0;
+  char protocol[4]="XXX";
   if(argc<3){
 	  printf("Usage:\n./server <protocol> <port>\nwhere:\n<protocol> - TCP or UDP\n<port>     - port number\n");
 	  return 0;

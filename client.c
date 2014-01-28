@@ -110,10 +110,12 @@ off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
   char buffer[9+off_t_size];
   char code = (char) LSEEK;
   off_t lseek_offset;
+
   memcpy(&buffer[0], &code, 1);
   memcpy(&buffer[1], &fd, 4);
   memcpy(&buffer[5], &offset, off_t_size);
   memcpy(&buffer[5+off_t_size], &whence, 4);
+
   write(srvhndl, &code, 1);
   sock_write_int(srvhndl, &fd);
   write(srvhndl, &offset, off_t_size);
@@ -125,6 +127,36 @@ off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
     read(srvhndl, &lseek_offset, off_t_size);
     return lseek_offset;
   }
+}
+
+int fs_fstat(int srvhndl, int fd, struct stat *buf){
+	  int stat_size = sizeof(stat_size);
+	  char buffer[5];
+	  char code = (char) FSTAT;
+	  int fstat_return;
+	  int time_t_size = sizeof(time_t_size);
+	  int off_t_size = sizeof(off_t_size);
+
+
+	  memcpy(&buffer[0], &code, 1);
+	  memcpy(&buffer[1], &fd, 4);
+
+	  write(srvhndl, &code, 1);
+	  sock_write_int(srvhndl, &fd);
+
+	  read(srvhndl, &code, 1);
+	  if(code != FSTAT_STAT){
+		  return -1;
+	  }else{
+		  read(srvhndl, &fstat_return, 4);
+		  if(fstat_return<0) return fstat_return;
+
+		  read(srvhndl, &buf->st_size, off_t_size);
+		  read(srvhndl, &buf->st_atime, time_t_size);
+		  read(srvhndl, &buf->st_mtime, time_t_size);
+		  read(srvhndl, &buf->st_ctime, time_t_size);
+		  return 0;
+	  }
 }
 
 int fs_read(int srvhndl, int fd, char *ptr, int len){
