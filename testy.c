@@ -33,7 +33,7 @@ int test_write(int srvhndl) {
   flags = O_APPEND | O_WRONLY | O_CREAT;
   printf("\n-----\ntest_write() begin\n-----\n");
 
-  fs_open(srvhndl, "testm.txt",&fd);
+  fs_open(srvhndl, "testm.txt",flags, &fd);
   fs_write(srvhndl, fd, "Hello world!",5);
   fs_close(srvhndl, fd);
 
@@ -61,7 +61,8 @@ int test_lseek(int srvhndl) {
   printf("\nDONE\n");
   fflush(stdout);
   printf("\nRead 5 chars...");
-  fs_read(srvhndl, fd, buffer[5],5);
+  fflush(stdout);
+  fs_read(srvhndl, fd, &buffer[5],5);
   printf("\nDONE\n");
   fflush(stdout);
   printf("\nClose testm.txt...");
@@ -100,8 +101,8 @@ int main(int argc, char **argv){
   fs_openserver("127.0.0.1", protocol, port, &srvhndl);
 
 
-  //test_read(srvhndl);
+  test_read(srvhndl);
   test_lseek(srvhndl);
-  //test_write(srvhndl);
+  test_write(srvhndl);
   return 0;
 }

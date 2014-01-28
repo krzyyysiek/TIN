@@ -130,8 +130,9 @@ int handle_lseek(sockfd){
 
   code=LSEEK_OFFSET;
   write(sockfd, &code, 1);
-  memcpy(buffer, lseek_ofsset, off_t_size);
-  write(sockfd, buffer, off_t_size);
+  memcpy(&buffer, &lseek_ofsset, off_t_size);
+  write(sockfd, &buffer, off_t_size);
+  printf("a"); fflush(stdout);
 }
 
 int handle_fstat(sockfd){
