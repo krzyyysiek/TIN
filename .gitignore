@@ -1,6 +1,7 @@
 .project
 client
 server
+testy
 *.txt
 config.h
 
