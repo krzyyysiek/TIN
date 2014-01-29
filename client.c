@@ -1,5 +1,6 @@
 #include "unp.h"
 #include "codes.h"
+
 #define DEBUG 0
 
 int sock_write_int(int sockfd, int *in_val){
@@ -14,45 +15,68 @@ int sock_read_int(int sockfd, int *value_out){
   memcpy(value_out, &buffer, 4);
 }
 
-int fs_openserver(char * ip, char protocol[4], int port, int *srvhndl_out ) {
+
+int fs_openserver(char * ip, char protocol[4], int port, int* sockfd_ret) {
+
   int 			sockfd;
   struct sockaddr_in	servaddr;
   
-  sockfd = Socket(AF_INET, SOCK_STREAM, 0);
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0) {
+    int terrno = errno;
+    printf("Error in opening server: socket error"); fflush(stdout);
+    return terrno;  
+  }
   
   bzero(&servaddr, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
   servaddr.sin_port = htons(port);
 
   Inet_pton(AF_INET, ip, &servaddr.sin_addr);
-  Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
-  *srvhndl_out = sockfd;
+
+  if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0) {
+    int terrno = errno;
+    printf("Error in opening server: connect error\n"); fflush(stdout);
+    return terrno;  
+  }
+  
+  *sockfd_ret = sockfd;
+  
+
   return 0;
 }
 
 int fs_closeserver(int srvhndl) {
-  close(srvhndl);
+  if (close(srvhndl) < 0) {
+    int terrno = errno;
+    printf("Error in closing server\n"); fflush(stdout);
+    return terrno;  
+  }
+  return 0;
 }
+
 
 int fs_open(int srvhndl, char * path, int flags, int *fd_out) {
   char code;
   int fd;
   int path_len = strlen(path);
   char msg[2];
+  
   msg[0] = (char)OPEN_FILE;
-  msg[1] = (char)path_len; //sciezka niedluzsza niz 255 znakow
-
+  msg[1] = (char)path_len;
   write(srvhndl, &msg, 2);
   sock_write_int(srvhndl, &flags);
   write(srvhndl, path, path_len);
 
   read(srvhndl, &code, 1);
   if (code != (char)OPEN_FILE_OK) {
-    if(DEBUG){
-    	printf("Couldn't open file on server.");
-    	fflush(stdout);
-    }
-    return 0; // jakis kod bledu zamiast 0
+    int terrno;
+    printf("Couldn't open file on server.");
+    fflush(stdout);
+    sock_read_int(sockfd, &terrno);
+    
+    return terrno;
+
   } 
   sock_read_int(srvhndl, &fd);
 
@@ -61,24 +85,51 @@ int fs_open(int srvhndl, char * path, int flags, int *fd_out) {
 	  fflush(stdout);
   }
   *fd_out = fd;
+
   return 0;
 }
 
 
 int fs_write(int srvhndl, int fd, char* data, int len) {
   char code = (char)WRITE;
-  char write_msg[9];
   write(srvhndl,&code, 1);
   sock_write_int(srvhndl, &fd);
   sock_write_int(srvhndl, &len); 
   write(srvhndl, data, len);
+
+  read(srvhndl, &code, 1);
+  if (code != (char)WRITE_FILE_OK) {
+    int terrno;
+    printf("Couldn't write to file on server.");
+    fflush(stdout);
+    sock_read_int(srvhndl, &terrno); 
+    
+    return terrno;
+  }
+
+  return 0;
+  
 }
 
 
 int fs_close(int srvhndl, int fd) {
-  char code = (char)CLOSE_FILE;
+  char code;
+  code = (char)CLOSE_FILE;
   write(srvhndl, &code, 1);
   sock_write_int(srvhndl, &fd);
+
+  read(srvhndl, &code, 1);
+  if (code != (char)CLOSE_FILE_OK) {
+    int terrno;
+    printf("Couldn't close the file on server.");
+    fflush(stdout);
+    sock_read_int(srvhndl, &terrno); 
+    
+    return terrno;
+  }
+
+  return 0;
+  
 } 
 
 int fs_read_out(int sockfd, int fd, int len){
@@ -93,31 +144,49 @@ int fs_read_in(int sockfd, char *ptr, int len){
   char buffer[1024];
   int remaining, to_read, n, offset;
 
-  read(sockfd, &code, 1);  
-  if(code != READ_OK){
-	if(DEBUG){
-		printf("Problem with reading");
-		fflush(stdout);
-	}
-    return -1;
-  }
-  if(DEBUG){
-	  printf("Received READ_OK\n");
-  	  fflush(stdout);
-  }
-
+  
   offset = 0;
+   
   remaining = len;
-  to_read = min(1024, remaining);
-  while(remaining > 0 && (n = read(sockfd, &buffer, to_read)) != 0){
-	if(DEBUG){
-		printf("Read %d bytes and writing it.\n", n);
-    	fflush(stdout);
-	}
+  while(remaining > 0) {
+    read(sockfd, &code, 1); 
+    if(code == CANT_READ_FILE){
+      int terrno;
+      if (DEBUG) {
+        printf("Problem with reading");
+        fflush(stdout);
+      }
+      sock_read_int(sockfd, &terrno);
+      return terrno;
+    }
+    else if (code != READ_OK) {
+      if (DEBUG) {
+        printf("Received unknown code\n"); fflush(stdout); 
+      }
+      return -1;
+    }
+    if (DEBUG) {
+      printf("Received READ_OK\n");
+      fflush(stdout);
+    }
+
+    to_read = min(1024, remaining);
+   
+    n = read(sockfd, &buffer, to_read);
+    if (to_read != n) {
+      printf("Error reading from socket\n");
+      return -2;
+    }
+    
+    printf("Read %d bytes.\n", n);  fflush(stdout);
+
     memcpy(&ptr[offset], buffer, n);
     remaining -= n;
     offset += n;
   }
+  
+  return 0;
+
 }
 
 off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
@@ -167,7 +236,6 @@ int fs_fstat(int srvhndl, int fd, struct stat *buf){
 }
 
 int fs_read(int srvhndl, int fd, char *ptr, int len){
-
   fs_read_out(srvhndl, fd, len);
-  fs_read_in(srvhndl, ptr, len);
+  return fs_read_in(srvhndl, ptr, len);
 }

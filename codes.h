@@ -4,6 +4,13 @@
 #define OPEN_FILE_OK 4
 #define CLOSE_FILE 5
 #define CANT_OPEN_FILE 20
+#define CANT_WRITE_FILE 21
+#define WRITE_FILE_OK 22
+#define CANT_CLOSE_FILE 23
+#define CLOSE_FILE_OK 24
+#define CANT_READ_FILE 25
+#define READ_FILE_OK 26
+#define CANT_READ_SOCKET 27
 #define READ_OK 10
 #define LSEEK 6
 #define LSEEK_OFFSET 7

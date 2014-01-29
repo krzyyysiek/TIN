@@ -2,6 +2,7 @@
 #include "codes.h"
 #include "errno.h"
 
+
 int sock_write_int(int sockfd, int *in_val){
   char buffer[4];
   memcpy(&buffer[0], in_val, 4);
@@ -24,8 +25,9 @@ int handle_write(int sockfd){
   char data_buffer[1024];
   int remaining;
 
-  int n;
   int to_read;
+  char code;
+  
 
   read(sockfd, &fd_buffer, 4);
   read(sockfd, &data_len_buffer, 4);
@@ -35,22 +37,45 @@ int handle_write(int sockfd){
 
   remaining= data_len;
   to_read = min(1024, remaining);
-  while( remaining > 0 && (n = read(sockfd, &data_buffer, to_read)) != 0){
-    printf("Writing %d bytes to file\n", n);
-    write(fd, &data_buffer, n);
-    //fwrite(&data_buffer, 1, n, fd);
-    remaining -= n;
+
+
+  while( remaining > 0) {
+    if (to_read != read(sockfd, &data_buffer, to_read)) {
+      int terrno = errno;
+      code = (char)CANT_READ_SOCKET;
+      write(sockfd, &code, 1);
+      sock_write_int(sockfd, &terrno);
+      return -1;
+    }
+    if (fwrite(&data_buffer, 1, to_read, fd) < to_read) {
+      int terrno = errno;
+      code = (char)CANT_WRITE_FILE;
+      write(sockfd, &code, 1);
+      sock_write_int(sockfd, &terrno);
+      return -1;
+
+    }
+    printf("Writing %d bytes to file", to_read); fflush(stdout);
+    remaining -= to_read;
+
     to_read = min(1024, remaining);
   }
 
+  code = (char)WRITE_FILE_OK;
+  write(sockfd, &code, 1);
+
   printf("File write, fd: %d, len: %d\n", fd, data_len);
   fflush(stdout);
+
+  return 0;
 }
 
 int handle_open_file(sockfd){
+
   int fd = NULL;
-  char code, len, fd_msg[4], path[255];
-  int flags;
+  char code;
+  char len;
+  char path[255];
 
   read(sockfd, &len, 1);
   sock_read_int(sockfd, &flags);
@@ -58,32 +83,52 @@ int handle_open_file(sockfd){
 
   read(sockfd, &path, (int)len);
   path[(int)len]='\0'; 
+
+  // TODO ewentualne tlumaczenie podanej sciezki na sciezke w serwerze 
   fd = open(path, flags);
   if(fd < 0){
-    printf("Problem opening file");
-    fflush(stdout);
+    int terrno = errno;
+    printf("Problem opening file on server. Errno: %d", terrno); fflush(stdout);
+
     code = (char)CANT_OPEN_FILE;
+    write(sockfd, &code, 1);
+
+    sock_write_int(sockfd, &terrno);
+    return -1;
   }
- 
+  else {
+
   code = (char)OPEN_FILE_OK;
   write(sockfd, &code, 1);  
 
   printf("Opened file fd: %d\n",fd);
-  fflush(stdout);
-
   sock_write_int(sockfd, &fd);
+
+  return 0; 
+
+  }
 }	
 
 int handle_close(int sockfd){
+  char code;
   int fd = NULL;
   sock_read_int(sockfd, &fd);
 
-  printf("Close file fd: %d\n",fd);
-  fflush(stdout);
   if(close(fd) == -1){
-    printf("Problem with closing. Errno: %d\n",errno);
+    int terrno = errno;
+    code = (char)CANT_CLOSE_FILE;
+    write(sockfd, &code, 1);
+    sock_write_int(sockfd, &terrno);
+    printf("Can't close file on server"); fflush(stdout);
+    return -1;
   }
-  fflush(stdout);
+  
+  code = (char)CLOSE_FILE_OK;
+  write(sockfd, &code, 1);
+  printf("File closed\n"); fflush(stdout);
+  return 0;
+  
+
 }
 
 int handle_read_in(int sockfd, int *fd, int *len){
@@ -95,27 +140,32 @@ int handle_read_in(int sockfd, int *fd, int *len){
 }
 
 int handle_read_out(int sockfd, int *ptr_fd, int *ptr_len){
-  char code = (char)READ_OK;
+  char code;
   char buffer[1024];
+
   int fd, remaining, len, n, to_read;
+
 
   fd = *ptr_fd;
   len = *ptr_len;
   
-  write(sockfd, &code, 1);
-
   remaining = len;
   to_read = min(1024, remaining);
-  while( remaining > 0 && (n = read(fd, buffer, to_read)) != 0){
-    if(n == -1){
-    	printf("Read error, code: %d", errno);
-    	fflush(stdout);
-    	return -1;
-    }
-    printf("Read %d bytes and writing to socket\n", n);
-    fflush(stdout);
-    write(sockfd, buffer, n);
-    remaining -= n;
+
+  while( remaining > 0) {
+    if (to_read != fread(buffer, 1, to_read, fd)) {
+      int terrno = errno;
+      code = (char)CANT_READ_FILE;
+      write(sockfd, &code, 1);
+      sock_write_int(sockfd, &terrno);
+      return -1;
+    } 
+
+    printf("Read %d bytes and writing to socket", to_read);
+    code = (char)READ_OK;
+    write(sockfd, &code, 1);
+    write(sockfd, buffer, to_read);
+    remaining -= to_read;
     to_read = min(1024, remaining);
   }
   fflush(stdout);
