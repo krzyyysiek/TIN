@@ -4,7 +4,7 @@
 
 int test_fstat(int srvhndl,char *filename) {
   int fd, i;
-  int flags;
+  int flags = O_RDWR;
   struct stat buf;
   printf("\n----- test_fstat() begin -----\n");
 

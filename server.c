@@ -140,7 +140,7 @@ int handle_lseek(sockfd){
   read(sockfd, &whence, sizeof(int));
   lseek_ofsset=lseek(fd, offset, whence);
 
-  code=LSEEK_OFFSET;
+  code=(char)LSEEK_OFFSET;
   write(sockfd, &code, 1);
   memcpy(&buffer, &lseek_ofsset, off_t_size);
   write(sockfd, &buffer, off_t_size);

@@ -16,8 +16,9 @@ int test_lseek(int srvhndl, char *filename, int offset, char *whence) {
   	  	  printf("DONE\n");
 
 		  printf("Read 5 chars...");
+                  fflush(stdout);
   fs_read(srvhndl, fd, buffer,5);
-  	  	  printf("DONE\n");
+  	  	  printf("DONE\n"); fflush(stdout);
 
   if(strcmp(whence,"SEEK_SET")){
 		  printf("Move pointer to position %d from begin...",offset);
@@ -35,13 +36,13 @@ int test_lseek(int srvhndl, char *filename, int offset, char *whence) {
   		  printf("Bad <whence> value.");
   }
 
-		  printf("Read 5 chars...");
+		  printf("Read 5 chars..."); fflush(stdout);
   fs_read(srvhndl, fd, &buffer2,5);
-  	  	  printf("DONE\n");
+  	  	  printf("DONE\n"); fflush(stdout);
 
-  	  	  printf("Close %s...",filename);
+  	  	  printf("Close %s...",filename); fflush(stdout);
   fs_close(srvhndl, fd);
-  	  	  printf("DONE\n");
+  	  	  printf("DONE\n"); fflush(stdout);
   buffer[5]='\0';
   buffer2[5]='\0';
   printf("Results:\n");

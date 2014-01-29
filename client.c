@@ -126,14 +126,11 @@ off_t fs_lseek(int srvhndl, int fd, off_t offset, int whence){
   char code = (char) LSEEK;
   off_t lseek_offset;
 
-  memcpy(&buffer[0], &code, 1);
-  memcpy(&buffer[1], &fd, 4);
-  memcpy(&buffer[5], &offset, off_t_size);
-  memcpy(&buffer[5+off_t_size], &whence, 4);
 
   write(srvhndl, &code, 1);
   sock_write_int(srvhndl, &fd);
   write(srvhndl, &offset, off_t_size);
+  sock_write_int(srvhndl, &whence);
 
   read(srvhndl, &code, 1);
   if(code != LSEEK_OFFSET){

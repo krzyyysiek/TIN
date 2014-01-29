@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 ./test_open 127.0.0.1 TCP 9001 testm.txt
 ./test_read 127.0.0.1 TCP 9001 testm.txt 5
 ./test_write 127.0.0.1 TCP 9001 testm.txt blablabla
