@@ -73,7 +73,7 @@ int fs_open(int srvhndl, char * path, int flags, int *fd_out) {
     int terrno;
     printf("Couldn't open file on server.");
     fflush(stdout);
-    sock_read_int(sockfd, &terrno);
+    sock_read_int(srvhndl, &terrno);
     
     return terrno;
 

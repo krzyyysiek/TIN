@@ -47,7 +47,7 @@ int handle_write(int sockfd){
       sock_write_int(sockfd, &terrno);
       return -1;
     }
-    if (fwrite(&data_buffer, 1, to_read, fd) < to_read) {
+    if (write(fd, &data_buffer, to_read) < to_read) {
       int terrno = errno;
       code = (char)CANT_WRITE_FILE;
       write(sockfd, &code, 1);
@@ -72,7 +72,8 @@ int handle_write(int sockfd){
 
 int handle_open_file(sockfd){
 
-  int fd = NULL;
+  int fd;
+  int flags;
   char code;
   char len;
   char path[255];
@@ -111,7 +112,7 @@ int handle_open_file(sockfd){
 
 int handle_close(int sockfd){
   char code;
-  int fd = NULL;
+  int fd;
   sock_read_int(sockfd, &fd);
 
   if(close(fd) == -1){
@@ -153,7 +154,7 @@ int handle_read_out(int sockfd, int *ptr_fd, int *ptr_len){
   to_read = min(1024, remaining);
 
   while( remaining > 0) {
-    if (to_read != fread(buffer, 1, to_read, fd)) {
+    if (to_read != read(fd, buffer, to_read)) {
       int terrno = errno;
       code = (char)CANT_READ_FILE;
       write(sockfd, &code, 1);
@@ -213,7 +214,9 @@ int handle_fstat(sockfd){
   write(sockfd, &(buf.st_atime), time_t_size);
   write(sockfd, &(buf.st_mtime), time_t_size);
   write(sockfd, &(buf.st_ctime), time_t_size);
+
 }
+ 
 
 int handle_client(int sockfd){
   ssize_t	n;

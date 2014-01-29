@@ -5,7 +5,7 @@
 int test_open(int srvhndl, char *filename) {
   int fd, i;
   int flags;
-  flags = O_RDWR;
+  flags = O_RDWR | O_CREAT;
   printf("\n----- test_open() begin -----\n\n");
 
   	  	  printf("Opening file %s...",filename);
