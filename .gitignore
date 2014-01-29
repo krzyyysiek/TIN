@@ -2,6 +2,12 @@
 client
 server
 testy
+test_open
+test_read
+test_write
+test_lseek
+test_fstat
+test.sh~
 *.txt
 config.h
 

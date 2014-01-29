@@ -36,7 +36,7 @@ int handle_write(int sockfd){
   remaining= data_len;
   to_read = min(1024, remaining);
   while( remaining > 0 && (n = read(sockfd, &data_buffer, to_read)) != 0){
-    printf("Writing %d bytes to file", n);
+    printf("Writing %d bytes to file\n", n);
     write(fd, &data_buffer, n);
     //fwrite(&data_buffer, 1, n, fd);
     remaining -= n;
@@ -112,7 +112,7 @@ int handle_read_out(int sockfd, int *ptr_fd, int *ptr_len){
     	fflush(stdout);
     	return -1;
     }
-    printf("Read %d bytes and writing to socket", n);
+    printf("Read %d bytes and writing to socket\n", n);
     fflush(stdout);
     write(sockfd, buffer, n);
     remaining -= n;
@@ -144,7 +144,6 @@ int handle_lseek(sockfd){
   write(sockfd, &code, 1);
   memcpy(&buffer, &lseek_ofsset, off_t_size);
   write(sockfd, &buffer, off_t_size);
-  printf("a"); fflush(stdout);
 }
 
 int handle_fstat(sockfd){
@@ -152,19 +151,18 @@ int handle_fstat(sockfd){
   int stat_size = sizeof(stat_size);
   int time_t_size = sizeof(time_t_size);
   int off_t_size = sizeof(off_t_size);
-  char code = (char) FSTAT;
+  char code = (char) FSTAT_STAT;
   int fstat_return;
   struct stat buf;
 
-  read(sockfd, &fd, 4);
+  sock_read_int(sockfd, &fd);
   fstat_return=fstat(fd, &buf);
-
-  code=LSEEK_OFFSET;
   write(sockfd, &code, 1);
-  write(sockfd, &buf.st_size, off_t_size);
-  write(sockfd, &buf.st_atime, time_t_size);
-  write(sockfd, &buf.st_mtime, time_t_size);
-  write(sockfd, &buf.st_ctime, time_t_size);
+  sock_write_int(sockfd, &fstat_return);
+  write(sockfd, &(buf.st_size), off_t_size);
+  write(sockfd, &(buf.st_atime), time_t_size);
+  write(sockfd, &(buf.st_mtime), time_t_size);
+  write(sockfd, &(buf.st_ctime), time_t_size);
 }
 
 int handle_client(int sockfd){
