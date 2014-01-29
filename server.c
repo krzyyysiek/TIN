@@ -1,5 +1,12 @@
 #include "unp.h"
 #include "codes.h"
+#include "errno.h"
+
+int sock_write_int(int sockfd, int *in_val){
+  char buffer[4];
+  memcpy(&buffer[0], in_val, 4);
+  write(sockfd, &buffer[0], 4);
+}
 
 int sock_read_int(int sockfd, int *value_out){
   char buffer[4];
@@ -46,8 +53,8 @@ int handle_open_file(sockfd){
   int flags;
 
   read(sockfd, &len, 1);
-  printf("File path len: %d, flags:%d\n", (int)len, flags); fflush(stdout); 
   sock_read_int(sockfd, &flags);
+  printf("File path len: %d, flags:%d\n", (int)len, flags); fflush(stdout);
 
   read(sockfd, &path, (int)len);
   path[(int)len]='\0'; 
@@ -61,21 +68,21 @@ int handle_open_file(sockfd){
   code = (char)OPEN_FILE_OK;
   write(sockfd, &code, 1);  
 
-  memcpy(&fd_msg[0], &fd, sizeof(int));
-  write(sockfd, &fd_msg, 4); 
+  printf("Opened file fd: %d\n",fd);
   fflush(stdout);
+
+  sock_write_int(sockfd, &fd);
 }	
 
 int handle_close(int sockfd){
-  char fd_buffer[4];
-  FILE* fd = NULL;
-  read(sockfd, &fd_buffer, 4);
-  memcpy(&fd, fd_buffer, sizeof(int));
+  int fd = NULL;
+  sock_read_int(sockfd, &fd);
 
-  if(fclose(fd) == EOF){
-    printf("Problem?");
+  printf("Close file fd: %d\n",fd);
+  fflush(stdout);
+  if(close(fd) == -1){
+    printf("Problem with closing. Errno: %d\n",errno);
   }
-  printf("File closed\n");
   fflush(stdout);
 }
 
@@ -100,6 +107,11 @@ int handle_read_out(int sockfd, int *ptr_fd, int *ptr_len){
   remaining = len;
   to_read = min(1024, remaining);
   while( remaining > 0 && (n = read(fd, buffer, to_read)) != 0){
+    if(n == -1){
+    	printf("Read error, code: %d", errno);
+    	fflush(stdout);
+    	return -1;
+    }
     printf("Read %d bytes and writing to socket", n);
     fflush(stdout);
     write(sockfd, buffer, n);

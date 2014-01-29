@@ -9,15 +9,15 @@ int test_read(int srvhndl) {
   flags = O_RDWR;
   printf("\n-----\ntest_read() begin\n-----\n");
 
-  printf("\nOpening testm.txt...");
+  printf("\nOpening testm.txt %d...",flags);
   fs_open(srvhndl, "testm.txt",flags, &fd);
-  printf("\nDONE\n");
+  printf("DONE\n");
   printf("\nRead 5 chars...");
   fs_read(srvhndl, fd, buffer,5);
-  printf("\nDONE\n");
+  printf("DONE\n");
   printf("\nClose testm.txt...");
   fs_close(srvhndl, fd);
-  printf("\nDONE\n");
+  printf("DONE\n");
 
   for(i=0; i<5; i++){
     printf("%c", buffer[i]);
@@ -27,10 +27,32 @@ int test_read(int srvhndl) {
   fflush(stdout);
 }
 
+int test_open(int srvhndl) {
+  int fd, i;
+  char buffer[1024];
+  int flags;
+  flags = O_RDWR;
+  printf("\n-----\ntest_open() begin\n-----\n");
+
+  printf("\nOpening testm.txt %d...",flags);
+  fs_open(srvhndl, "testm.txt",flags, &fd);
+  printf("DONE\n");
+  printf("\nClose testm.txt...");
+  fs_close(srvhndl, fd);
+  printf("DONE\n");
+
+  for(i=0; i<5; i++){
+    printf("%c", buffer[i]);
+  }
+
+  printf("\n-----\ntest_open() end\n-----\n");
+  fflush(stdout);
+}
+
 int test_write(int srvhndl) {
   int fd, i;
   int flags;
-  flags = O_APPEND | O_WRONLY | O_CREAT;
+  flags = O_WRONLY | O_CREAT;
   printf("\n-----\ntest_write() begin\n-----\n");
 
   fs_open(srvhndl, "testm.txt",flags, &fd);
@@ -49,25 +71,25 @@ int test_lseek(int srvhndl) {
   printf("\n-----\ntest_lseek() begin\n-----\n");
   buffer[0]="1111111111111\0";
 
-  printf("\nOpening testm.txt...");
+  printf("\nOpening testm.txt %d...",flags);
   fs_open(srvhndl, "testm.txt",flags, &fd);
-  printf("\nDONE\n");
+  printf("DONE\n");
   printf("\nRead 5 chars...");
   fs_read(srvhndl, fd, buffer,5);
-  printf("\nDONE\n");
+  printf("DONE\n");
   printf("\nMove pointer to position 3...");
   fflush(stdout);
   fs_lseek(srvhndl, fd, 3,SEEK_SET);
-  printf("\nDONE\n");
+  printf("DONE\n");
   fflush(stdout);
   printf("\nRead 5 chars...");
   fflush(stdout);
   fs_read(srvhndl, fd, &buffer[5],5);
-  printf("\nDONE\n");
+  printf("DONE\n");
   fflush(stdout);
   printf("\nClose testm.txt...");
   fs_close(srvhndl, fd);
-  printf("\nDONE\n");
+  printf("DONE\n");
   fflush(stdout);
 
   printf("\nResults:\n");
@@ -101,8 +123,9 @@ int main(int argc, char **argv){
   fs_openserver("127.0.0.1", protocol, port, &srvhndl);
 
 
-  test_read(srvhndl);
+  test_open(srvhndl);
   test_lseek(srvhndl);
   test_write(srvhndl);
+  test_read(srvhndl);
   return 0;
 }
