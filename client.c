@@ -24,7 +24,9 @@ int fs_openserver(char * ip, char protocol[4], int port, int* sockfd_ret) {
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
     int terrno = errno;
-    printf("Error in opening server: socket error"); fflush(stdout);
+    if(DEBUG){
+    	printf("Error in opening server: socket error"); fflush(stdout);
+    }
     return terrno;  
   }
   
@@ -36,7 +38,9 @@ int fs_openserver(char * ip, char protocol[4], int port, int* sockfd_ret) {
 
   if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0) {
     int terrno = errno;
-    printf("Error in opening server: connect error\n"); fflush(stdout);
+    if(DEBUG){
+    	printf("Error in opening server: connect error\n"); fflush(stdout);
+    }
     return terrno;  
   }
   
@@ -49,7 +53,9 @@ int fs_openserver(char * ip, char protocol[4], int port, int* sockfd_ret) {
 int fs_closeserver(int srvhndl) {
   if (close(srvhndl) < 0) {
     int terrno = errno;
-    printf("Error in closing server\n"); fflush(stdout);
+    if(DEBUG){
+    	printf("Error in closing server\n"); fflush(stdout);
+    }
     return terrno;  
   }
   return 0;
@@ -71,8 +77,10 @@ int fs_open(int srvhndl, char * path, int flags, int *fd_out) {
   read(srvhndl, &code, 1);
   if (code != (char)OPEN_FILE_OK) {
     int terrno;
-    printf("Couldn't open file on server.");
-    fflush(stdout);
+    if(DEBUG){
+    	printf("Couldn't open file on server.\n");
+    	fflush(stdout);
+    }
     sock_read_int(srvhndl, &terrno);
     
     return terrno;
@@ -100,8 +108,10 @@ int fs_write(int srvhndl, int fd, char* data, int len) {
   read(srvhndl, &code, 1);
   if (code != (char)WRITE_FILE_OK) {
     int terrno;
-    printf("Couldn't write to file on server.");
-    fflush(stdout);
+    if(DEBUG){
+    	printf("Couldn't write to file on server.");
+    	fflush(stdout);
+    }
     sock_read_int(srvhndl, &terrno); 
     
     return terrno;
@@ -121,8 +131,10 @@ int fs_close(int srvhndl, int fd) {
   read(srvhndl, &code, 1);
   if (code != (char)CLOSE_FILE_OK) {
     int terrno;
-    printf("Couldn't close the file on server.");
-    fflush(stdout);
+    if(DEBUG){
+    	printf("Couldn't close the file on server.");
+    	fflush(stdout);
+    }
     sock_read_int(srvhndl, &terrno); 
     
     return terrno;
@@ -174,12 +186,15 @@ int fs_read_in(int sockfd, char *ptr, int len){
    
     n = read(sockfd, &buffer, to_read);
     if (to_read != n) {
-      printf("Error reading from socket\n");
+    	  if(DEBUG){
+    		  	  printf("Error reading from socket\n");
+    	  }
       return -2;
     }
-    
-    printf("Read %d bytes.\n", n);  fflush(stdout);
 
+    if(DEBUG){
+    	printf("Read %d bytes.\n", n);  fflush(stdout);
+    }
     memcpy(&ptr[offset], buffer, n);
     remaining -= n;
     offset += n;

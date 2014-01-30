@@ -71,7 +71,7 @@ int main(int argc, char **argv){
   }
 
   seek=strtol(argv[5], NULL, 10);
-  fs_openserver("127.0.0.1", protocol, port, &srvhndl);
+  fs_openserver(argv[1], protocol, port, &srvhndl);
   test_lseek(srvhndl,argv[4],seek,argv[6]);
   return 0;
 }

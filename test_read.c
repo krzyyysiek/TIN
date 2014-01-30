@@ -7,7 +7,7 @@ int test_read(int srvhndl, char *filename, int len) {
   char buffer[len];
   int flags;
   flags = O_RDWR;
-  printf("\n-----\ntest_read() begin\n-----\n\n");
+  printf("\n----- test_read() begin -----\n\n");
 
   	  	  printf("Opening file %s...",filename);
   fs_open(srvhndl, filename,flags, &fd);
@@ -20,6 +20,7 @@ int test_read(int srvhndl, char *filename, int len) {
   	  	  printf("Close %s...",filename);
   fs_close(srvhndl, fd);
   	  	  printf("DONE\n");
+  	    fflush(stdout);
 
   printf("Results:\n");
   for(i=0; i<len; i++){
@@ -50,7 +51,7 @@ int main(int argc, char **argv){
 
   }
   len=strtol(argv[5], NULL, 10);
-  fs_openserver("127.0.0.1", protocol, port, &srvhndl);
+  fs_openserver(argv[1], protocol, port, &srvhndl);
   test_read(srvhndl,argv[4],len);
   return 0;
 }

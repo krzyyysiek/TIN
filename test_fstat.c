@@ -44,7 +44,7 @@ int main(int argc, char **argv){
 
 
   }
-  fs_openserver("127.0.0.1", protocol, port, &srvhndl);
+  fs_openserver(argv[1], protocol, port, &srvhndl);
   test_fstat(srvhndl,argv[4]);
   return 0;
 }

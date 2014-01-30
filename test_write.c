@@ -41,7 +41,7 @@ int main(int argc, char **argv){
 	            }
 	            printf("Running with %s connection on port %d...\n",protocol,port);
 	  }
-	  fs_openserver("127.0.0.1", protocol, port, &srvhndl);
+	  fs_openserver(argv[1], protocol, port, &srvhndl);
 	  test_write(srvhndl,argv[4],argv[5]);
 	  return 0;
 }
